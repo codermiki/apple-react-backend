@@ -1,5 +1,5 @@
 import express from "express";
-import { createConnection } from "mysql2";
+import mysql from "mysql2/promise";
 import cors from "cors";
 import dotenv from "dotenv";
 dotenv.config();
@@ -22,7 +22,7 @@ app.use(
 );
 console.log();
 
-const connection = createConnection({
+const pool = mysql.createPool({
   host: DB_HOST,
   user: DB_USER,
   password: DB_PASS,
@@ -33,16 +33,17 @@ const connection = createConnection({
   ssl: { rejectUnauthorized: false },
 });
 
-connection.connect((err) => {
-  if (err) {
-    console.log(err.message);
-  } else {
-    console.log("Database Connected");
-  }
-});
+// connection.connect((err) => {
+//   if (err) {
+//     console.log(err.message);
+//   } else {
+//     console.log("Database Connected");
+//   }
+// });
 
-app.get("/iphone", (req, res) => {
-  const select = `SELECT 
+app.get("/iphone", async (req, res) => {
+  try {
+    const select = `SELECT 
 	  t1.Product_id,
     t1.product_url,
     t1.product_name,
@@ -60,19 +61,21 @@ INNER JOIN
     product_prices t3 ON t2.Product_id = t3.Product_id;
 `;
 
-  connection.query(select, (err, data) => {
-    if (err) {
-      console.log(err);
-    } else {
-      res.json(data);
-    }
-  });
-});
-
-app.listen(PORT, (err) => {
-  if (err) {
-    console.log(err.message);
-  } else {
-    console.log(`Local Server:   http://localhost:${PORT}/`);
+    const [rows] = await pool.query(select);
+    res.json(rows);
+  } catch (error) {
+    console.log(error);
+    res.status(500).send("Server Error");
   }
 });
+
+// Start the server after database connection
+const startServer = async () => {
+  const result = await pool.execute("select 'test'");
+  console.log("db connected");
+  app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+  });
+};
+
+startServer();
