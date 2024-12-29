@@ -12,7 +12,14 @@ const DB_PORT = process.env.DB_PORT;
 
 const app = express();
 const PORT = 4000;
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "https://aple-react-clone-2024.netlify.app",
+    ],
+  })
+);
 console.log();
 
 const connection = createConnection({
